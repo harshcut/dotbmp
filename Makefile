@@ -5,16 +5,15 @@ SRC       = $(SRC_DIR)/main.c
 BUILD_DIR = build
 TARGET    = $(BUILD_DIR)/main
 
-all: $(TARGET)
-
+.PHONY: $(TARGET)
 $(TARGET): $(SRC)
 	@mkdir -p $(BUILD_DIR)
 	@$(CC) $(CFLAGS) $@ $<
 
+.PHONY: run
 run: $(TARGET)
 	@$(TARGET)
 
+.PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR)
-
-.PHONY: all run clean
