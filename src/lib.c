@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <assert.h>
 
 typedef unsigned int color_t;
@@ -131,4 +132,71 @@ void free_bitmap(struct Bitmap bitmap)
 {
     free(bitmap.pixels);
     bitmap.pixels = NULL;
+}
+
+void cprint(int red, int green, int blue)
+{
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer), "\033[48;2;%d;%d;%dm \033[0m", red, green, blue);
+    printf("%s%s", buffer, buffer);
+}
+
+void print_pixeldata(int width, int height, unsigned char *pixeldata, int pixeldata_size)
+{
+    int alignment_padding = (4 - (width * 3) % 4) % 4;
+    int bytes_per_row = width * 3 + alignment_padding;
+    int start_index = pixeldata_size - bytes_per_row;
+
+    for (int i = 1; i <= height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            int red = pixeldata[start_index + 2];
+            int green = pixeldata[start_index + 1];
+            int blue = pixeldata[start_index];
+            cprint(red, green, blue);
+            start_index += 3;
+        }
+        start_index = pixeldata_size - (bytes_per_row * (i + 1));
+        printf("\033[0;m\n");
+    }
+}
+
+void free_pixeldata(unsigned char *pixeldata)
+{
+    free(pixeldata);
+    pixeldata = NULL;
+}
+
+unsigned int parse_little_endian_int(char *buffer, int start, int length)
+{
+    unsigned int value = 0;
+    for (int i = 0; i < length; i++)
+    {
+        value |= buffer[start + i] << (8 * i);
+    }
+    return value;
+}
+
+void display_bitmap(const char *filename)
+{
+    FILE *file = fopen(filename, "rb");
+    if (!file)
+    {
+        return;
+    }
+
+    char header[54];
+    fread(header, sizeof(header), 1, file);
+    unsigned int file_size = parse_little_endian_int(header, 2, 4);
+    unsigned int pixeldata_offset = parse_little_endian_int(header, 10, 4);
+    unsigned int width = parse_little_endian_int(header, 18, 4);
+    unsigned int height = parse_little_endian_int(header, 22, 4);
+
+    unsigned int pixeldata_size = file_size - pixeldata_offset;
+    unsigned char *pixeldata = malloc(pixeldata_size);
+    fread(pixeldata, pixeldata_size, 1, file);
+    fclose(file);
+    print_pixeldata(width, height, pixeldata, pixeldata_size);
+    free_pixeldata(pixeldata);
 }

@@ -10,5 +10,6 @@ int main()
 
     write_bitmap(bitmap, "out.bmp");
     free_bitmap(bitmap);
+    display_bitmap("out.bmp");
     return 0;
 }
